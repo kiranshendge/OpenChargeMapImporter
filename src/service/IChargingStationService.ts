@@ -1,6 +1,6 @@
 import { ChargingStation } from "../models/ChargingStation";
 
 export interface IChargingStationService {
-    importData(): Promise<void>;
+    importData(chargingStations: any): Promise<void>;
     getAllStations(): Promise<ChargingStation[]>;
 }

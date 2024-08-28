@@ -1,40 +1,49 @@
 import { ChargingStationRepository } from '../infrastructure/repository/ChargingStationRepository';
 import { ChargingStation } from '../models/ChargingStation';
 import axios from 'axios';
-import { rateLimit } from '../utils/rateLimiter';
-import { retryOperation } from '../utils/retryPolicy';
+import { limiter} from '../utils/rateLimiter';
 import { IChargingStationService } from './IChargingStationService';
 import { inject, injectable } from 'inversify';
 import { v4 as uuidv4} from 'uuid';
 import logger from '../utils/logger';
+import { Worker } from 'worker_threads';
+import path from 'path';
+import 'reflect-metadata';
+import { stringify } from 'querystring';
 
 @injectable()
 export class ChargingStationService implements IChargingStationService {
   constructor(@inject('IChargingStationRepository') private repository: ChargingStationRepository) {}
 
-  async fetchData(maxresults: number): Promise<any> {
+  async fetchData(maxresults: number, retries = 5): Promise<any> {
     try {
-      const response = await axios.get('https://api.openchargemap.io/v3/poi/', {
+      const response = await limiter.schedule(() => axios.get('https://api.openchargemap.io/v3/poi/', {
         params: {
           key: process.env.OPENCHARGEMAP_API_KEY,
           maxresults
         }
-      });
+      }));
       return response.data;
     }
     catch (error: any) {
-      logger.error(`Error while fetching data from openchargemap API: ${error.message}`);
-      throw new Error(`Failed to fetch data from API: ${error.message}`)
+      logger.error("errror:", JSON,stringify(error))
+      if (retries > 0 && error.response && error.response.status === 403) {
+        logger.error('Authentication error: Invalid API key');
+        throw new Error('Invalid API key');
+      } else if (retries > 0) {
+        const delay = Math.pow(2, 5 - retries) * 1000; // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return await this.fetchData(retries - 1);
+      } else {
+        logger.error(`Error while fetching data from openchargemap API: ${error.message}`);
+        throw new Error(`Failed to fetch data from API: ${error.message}`)
+      }
     }
   };
 
-  async fetchDataWithRetryRateLimit(maxresults: number): Promise<any> {
-    return retryOperation(rateLimit(await this.fetchData(maxresults)));
-  }
-
-  async importData(): Promise<void> {
+  async importData(): Promise<any> {
     try {
-      let chargingStations = await this.fetchData(10);
+      let chargingStations = await this.fetchData(30);
       const addresses = chargingStations.map((item: { AddressInfo: any; }) => ({
           id: item.AddressInfo.ID,
           title:item.AddressInfo.Title,
@@ -63,7 +72,7 @@ export class ChargingStationService implements IChargingStationService {
       chargingStations = chargingStations.map((item: any) => ({
         isRecentlyVerified: item.IsRecentlyVerified,
         dateLastVerified: new Date(item.DateLastVerified),
-        stationId: item.ID,
+        id: item.ID,
         uuid: item.UUID,
         dataProviderId: item.DataProviderID,
         operatorId: item.OperatorID,
@@ -77,7 +86,7 @@ export class ChargingStationService implements IChargingStationService {
         dateCreated: new Date(item.DateCreated),
         submissionStatusTypeId: item.SubmissionStatusTypeID
       }));
-  
+      
       const bulkData = {
         chargingStations,
         addresses,
@@ -88,9 +97,40 @@ export class ChargingStationService implements IChargingStationService {
     }
     catch (error: any) {
       logger.error(`Data import failed: ${error.message}`);
-      throw new Error('Data import failed');
+      throw new Error(error.message);
     }
   }
+
+  runWorker(offset: number, limit: number): any {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker('./src/worker.js', {
+        workerData: { offset, limit, path: './worker.ts' }
+      });
+      worker.on('message', resolve);
+      worker.on('error', reject);
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`));
+          // worker.terminate();
+        }
+      });
+    });
+  };
+
+  async importDataConcurrently(): Promise<void>{
+    let offset = 0;
+    const BATCH_SIZE = 100;
+    const CONCURRENCY = 2;
+    const promises = [];
+    while (true) {
+      for (let i = 0; i < CONCURRENCY; i++) {
+        promises.push(this.runWorker(offset, BATCH_SIZE));
+        offset += BATCH_SIZE;
+      }
+      await Promise.all(promises);
+      promises.length = 0;
+    }
+  };
 
   async getAllStations(): Promise<ChargingStation[]> {
       return this.repository.getAll();

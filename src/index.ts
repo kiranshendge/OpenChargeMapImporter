@@ -6,6 +6,7 @@ import 'reflect-metadata';
 import { connectDB } from './infrastructure/dbConnection';
 import { ChargingStationService } from './service/ChargingStationService';
 import { ChargingStationRepository } from './infrastructure/repository/ChargingStationRepository';
+import { GraphQLError } from 'graphql';
 
 dotenv.config();
 
@@ -35,7 +36,7 @@ dotenv.config();
  type ChargingStation {
    isRecentlyVerified: Boolean
    dateLastVerified: String
-   stationId: Int
+   id: Int
    uuid: String
    dataProviderId: Int
    operatorId: Int
@@ -50,9 +51,14 @@ dotenv.config();
    submissionStatusTypeId: Int
  }
 
+ type respBody {
+  message: String!
+  data: String
+ }
+
  type response {
   statusCode: Int
-  body: String
+  body: respBody
  }
  type Query {
   chargingStations: [ChargingStation!]!
@@ -71,6 +77,9 @@ const startServer = async () => {
     typeDefs,
     resolvers,
     context: () => ({ chargingStationService }),
+    formatError: (error) => {
+        return new GraphQLError(error.message);
+    },
   });
   await server.start();
   const app: any = express();

@@ -5,14 +5,14 @@ export const resolvers = {
         Query: {
           chargingStations: async (parent: any, args: any, context: { chargingStationService: ChargingStationService; }, info: any) => {
             const {chargingStationService} = context;
-            const data = await chargingStationService.getAllStations();
-            return SuccessResponse(data);
+            return await chargingStationService.getAllStations();
           },
         },
         Mutation: {
           importChargingStations: async (parent: any, args: any, context: { chargingStationService: ChargingStationService; }, info: any) => {
             const {chargingStationService} = context;
             await chargingStationService.importData();
+            // await chargingStationService.importDataConcurrently();
             return SuccessResponse('Import completed');
           }
         }

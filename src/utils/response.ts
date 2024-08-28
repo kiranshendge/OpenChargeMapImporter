@@ -2,10 +2,10 @@ const formatResponse = (statusCode: number, message: string, data: any) => {
     if (data) {
         return {
             statusCode,
-            body: JSON.stringify({
+            body: {
                 message,
                 data
-            })
+            }
         }
     } else {
         return {
