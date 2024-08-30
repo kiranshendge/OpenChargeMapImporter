@@ -13,7 +13,7 @@ This project aims to enhance our existing platform by integrating Points of Inte
 ### Significance ###
 The integration of POIs from OpenChargeMap is crucial for our platform as it enhances the user experience by providing accurate and up-to-date information about charging stations. This integration supports our mission to promote sustainable transportation by making it easier for users to find and utilize electric vehicle charging infrastructure. Additionally, the robust and resilient implementation ensures that our platform remains reliable and trustworthy, further solidifying our position as a leader in the industry.
 
-## Architectural Diagram ##
+## Architecture Diagram ##
 <img width="569" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/e2d6a7fa-609a-4140-86b9-2f7b23479886">
 
 ### Components and Interactions ###
@@ -100,7 +100,7 @@ The integration of POIs from OpenChargeMap is crucial for our platform as it enh
         * Obtain an API key from OpenChargeMap.
         * Include the API key in the request headers or request parameters
 
-## Database Schema ##
+## Database Documentation ##
 * **Collections and Schema**
      1. **ChargingStations Collection**
         ```javascript
@@ -176,7 +176,7 @@ The integration of POIs from OpenChargeMap is crucial for our platform as it enh
        { "id": 1}
        ```
 
-## Deployment ##
+## Deployment Instructions ##
 ### Prerequisites ###
 * **Kubernetes Cluster**: Ensure you have a Kubernetes cluster set up. You can use a managed Kubernetes service like Google Kubernetes Engine (GKE), Amazon EKS, or Azure AKS.
 * **kubectl**: Install <kbd>kubectl</kbd> and configure it to connect to your Kubernetes cluster.
