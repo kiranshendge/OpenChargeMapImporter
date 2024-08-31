@@ -1,17 +1,14 @@
 # Use an official Node.js runtime as a parent image
-FROM node:14
+FROM node:alpine
 
 # Set the working directory
-WORKDIR /usr/src/app
-
-# Install PM2 globally
-RUN npm install pm2 -g
+WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
@@ -19,5 +16,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 4000
 
-# Start the app with PM2
+# Start the app
 CMD ["npm", "start"]

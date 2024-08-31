@@ -1,25 +1,39 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  # openchargemapimporter:
-  #   build: 
-  #     dockerfile: Dockerfile
-  #     context: .
-  #   ports:
-  #     - "4000:4000"
-  #   environment:
-  #     - NODE_ENV=development
-  #   volumes:
-  #     - .:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   command: ["npm", "start"]
+  openchargemapimporter:
+    build: .
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+      - mongo_db
+    environment:
+      REDIS_URL: redis://redis:6379
+      MONGODB_URI: mongodb://mongo-db:27017/openchargemap
+      PORT: 4000
+      BATCH_SIZE: 500
+      CONCURRENCY: 1
+      OPENCHARGEMAP_API_KEY: ff82541f-c8d1-4507-be67-bd07e3259c4e
+    volumes:
+      - .:/app
+      - /app/node_modules
+  
 
-  mongo:
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  mongo_db:
     image: mongo:4.2
     ports:
       - "27017:27017"
+    container_name: mongo-db
+    restart: always
     volumes:
-      - mongo-data:/data/db
+      - mongo_db:/data/db
 
 volumes:
-  mongo-data:
+  mongo_db:

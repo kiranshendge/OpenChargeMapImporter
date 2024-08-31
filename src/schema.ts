@@ -26,7 +26,7 @@ export const typeDefs = gql`
   type ChargingStation {
     isRecentlyVerified: Boolean
     dateLastVerified: String
-    stationId: Int
+    id: Int
     uuid: String
     dataProviderId: Int
     operatorId: Int
@@ -41,11 +41,19 @@ export const typeDefs = gql`
     submissionStatusTypeId: Int
   }
 
-  type mutation {
-    importChargingStations: String!
+  type respBody {
+    message: String!
+    data: String
   }
 
-  type query {
+  type response {
+    statusCode: Int
+    body: respBody
+  }
+  type Query {
     chargingStations: [ChargingStation!]!
+  }
+  type Mutation {
+    importChargingStations: response!
   }
 `;

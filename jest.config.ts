@@ -8,7 +8,8 @@ const config: Config = {
   coverageDirectory: "coverage",
   coveragePathIgnorePatterns: ["/node_modules"],
   coverageProvider: "v8",
-  moduleDirectories: ["node_modules", "src"]
+  moduleDirectories: ["node_modules", "src"],
+  testTimeout: 20000
 };
 
 export default config;

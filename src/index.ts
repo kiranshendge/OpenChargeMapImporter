@@ -7,86 +7,32 @@ import { connectDB } from './infrastructure/dbConnection';
 import { ChargingStationService } from './service/ChargingStationService';
 import { ChargingStationRepository } from './infrastructure/repository/ChargingStationRepository';
 import { GraphQLError } from 'graphql';
+import mongoose from 'mongoose';
+import { typeDefs } from './schema';
+import { startScheduler } from './cronjob/dailyScheduler';
 
 dotenv.config();
 
- const typeDefs = gql`
- type AddressInfo {
-   id: Int
-   title: String
-   addressLine1: String
-   town: String
-   stateOrProvince: String
-   postcode: String
-   countryId: Int
-   latitude: Float
-   longitude: Float
-   distanceUnit: Int
- }
-
- type Connection {
-   id: Int
-   connectionTypeId: Int
-   statusTypeId: Int
-   levelId: Int
-   powerKW: Float
-   quantity: Int
- }
-
- type ChargingStation {
-   isRecentlyVerified: Boolean
-   dateLastVerified: String
-   id: Int
-   uuid: String
-   dataProviderId: Int
-   operatorId: Int
-   usageTypeId: Int
-   addressInfo: AddressInfo
-   connections: [Connection]
-   numberOfPoints: Int
-   statusTypeId: Int
-   dateLastStatusUpdate: String
-   dataQualityLevel: Int
-   dateCreated: String
-   submissionStatusTypeId: Int
- }
-
- type respBody {
-  message: String!
-  data: String
- }
-
- type response {
-  statusCode: Int
-  body: respBody
- }
- type Query {
-  chargingStations: [ChargingStation!]!
- }
- type Mutation {
-   importChargingStations: response!
- }
-`;
-
 const startServer = async () => {
   await connectDB();
-  const chargingRepo = new ChargingStationRepository();
-  const chargingStationService = new ChargingStationService(chargingRepo);
+  const chargingRepo = new ChargingStationRepository(mongoose.connection);
+  const chargingStationService = new ChargingStationService(chargingRepo, mongoose.connection);
 
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     context: () => ({ chargingStationService }),
     formatError: (error) => {
-        return new GraphQLError(error.message);
+      return new GraphQLError(error.message);
     },
   });
   await server.start();
   const app: any = express();
   server.applyMiddleware({ app });
   app.listen({ port: process.env.PORT }, () =>
-    console.log(`Server ready at http://localhost:4000${server.graphqlPath}`)
+    console.log(`Server ready at http://localhost:4000${server.graphqlPath}`),
   );
+  startScheduler();
 };
 
 startServer().catch(console.error);

@@ -1,39 +1,36 @@
-import { injectable } from "inversify";
-import { chargingStations, address, connection } from '../../models/ChargingStationModel'
-import { ChargingStation } from "../../models/ChargingStation";
-import { IChargingStationRepository } from "./IChargingStationRepository";
-import logger from "../../utils/logger";
-import 'reflect-metadata';
+import { chargingStations, address, connection } from '../../models/ChargingStationModel';
+import { ChargingStation } from '../../models/ChargingStation';
+import { IChargingStationRepository } from './IChargingStationRepository';
+import logger from '../../utils/logger';
+import { createBulkOps } from '../../utils/bulkOps';
+import mongoose, { Model } from 'mongoose';
 
-@injectable()
 export class ChargingStationRepository implements IChargingStationRepository {
-    async bulkUpsert(data: any): Promise<void> {
-      try{
-        const bulkAddressOps = this.upsert(data.addresses);
-        await address.bulkWrite(bulkAddressOps);
-        const bulkConnectionOps = this.upsert(data.connectionList);
-        await connection.bulkWrite(bulkConnectionOps);
-        const bulkChargingStnOps = this.upsert(data.chargingStations);
-        await chargingStations.bulkWrite(bulkChargingStnOps);
-      }
-      catch (error: any) {
-        logger.error(`error during insert to mongodb: ${error.message}`);
-        throw new Error(`error during insert to mongodb: ${error.message}`)
-      }
-      }
+  private readonly dbConnection: mongoose.Connection;
+  constructor(dbConnection: mongoose.Connection) {
+    this.dbConnection = dbConnection;
+  }
+  async bulkUpsert(data: any): Promise<void> {
+    try {
+      const bulkAddressOps = createBulkOps(data.addresses);
+      await address.bulkWrite(bulkAddressOps);
+      const bulkConnectionOps = createBulkOps(data.connectionList);
+      await connection.bulkWrite(bulkConnectionOps);
+      const bulkChargingStnOps = createBulkOps(data.chargingStationsList);
+      await chargingStations.bulkWrite(bulkChargingStnOps);
+    } catch (error: any) {
+      logger.error(`error during insert to mongodb: ${error.message}`);
+      throw new Error(`error during insert to mongodb: ${error.message}`);
+    }
+  }
 
-      async getAll(): Promise<ChargingStation[]> {
-        return chargingStations.find().populate(['addressInfo', 'connections']);
-      }
-
-      upsert(model: any): any {
-        const bulkOps = model.map((item: any) => ({
-          updateOne: {
-            filter: { id: item.id },
-            update: { $set: item },
-            upsert: true
-          }
-        }));
-        return bulkOps;
-      }
+  async checkRecordExists<T extends Document>(model: Model<T>, id: number): Promise<any> {
+    try {
+      const data = await model.findOne({ id: id });
+      return data;
+    } catch (error: any) {
+      logger.error(`error fetching data by Id: ${error.message}`);
+      throw new Error(error);
+    }
+  }
 }

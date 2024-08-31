@@ -1,0 +1,79 @@
+[
+    {
+      "IsRecentlyVerified": true,
+      "DateLastVerified": "2024-08-22T18:32:00Z",
+      "ID": 303216,
+      "UUID": "1FEF1580-B913-48EF-A9A1-558878700F03",
+      "DataProviderID": 1,
+      "OperatorID": 1,
+      "UsageTypeID": 4,
+      "AddressInfo": {
+        "ID": 303603,
+        "Title": "Fremont Chevrolet Buick GMC",
+        "AddressLine1": "1401 North Federal Boulevard",
+        "Town": "Riverton",
+        "StateOrProvince": "Wyoming",
+        "Postcode": "82501",
+        "CountryID": 2,
+        "Latitude": 43.038698,
+        "Longitude": -108.379586,
+        "DistanceUnit": 0
+      },
+      "Connections": [
+        {
+          "ID": 570377,
+          "ConnectionTypeID": 32,
+          "StatusTypeID": 50,
+          "LevelID": 2,
+          "PowerKW": 60,
+          "Quantity": 2
+        }
+      ],
+      "NumberOfPoints": 2,
+      "StatusTypeID": 50,
+      "DateLastStatusUpdate": "2024-08-22T18:32:00Z",
+      "DataQualityLevel": 1,
+      "DateCreated": "2024-08-19T19:21:00Z",
+      "SubmissionStatusTypeID": 200
+    },
+    {
+      "IsRecentlyVerified": true,
+      "DateLastVerified": "2024-08-19T14:29:00Z",
+      "ID": 303210,
+      "UUID": "B99174F1-2D3C-4A1E-BCC2-8FD10DD6E539",
+      "DataProviderID": 1,
+      "OperatorID": 1,
+      "UsageTypeID": 1,
+      "UsageCost": "Free",
+      "AddressInfo": {
+        "ID": 303597,
+        "Title": "G&C EV Charging Station",
+        "AddressLine1": "14008-A Willard Road",
+        "Town": "Chantilly",
+        "StateOrProvince": "Virginia",
+        "Postcode": "20151",
+        "CountryID": 2,
+        "Latitude": 38.8861975530002,
+        "Longitude": -77.4316035256725,
+        "ContactTelephone1": "703-263-2742",
+        "DistanceUnit": 0
+      },
+      "Connections": [
+        {
+          "ID": 570365,
+          "ConnectionTypeID": 27,
+          "StatusTypeID": 50,
+          "LevelID": 2,
+          "Amps": 28,
+          "Voltage": 240,
+          "PowerKW": 6.7,
+          "Quantity": 1
+        }
+      ],
+      "NumberOfPoints": 1,
+      "StatusTypeID": 50,
+      "DateLastStatusUpdate": "2024-08-19T14:29:00Z",
+      "DataQualityLevel": 1,
+      "DateCreated": "2024-08-19T13:42:00Z",
+      "SubmissionStatusTypeID": 200
+    }]

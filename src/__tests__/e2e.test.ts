@@ -1,98 +1,67 @@
-import request from 'supertest';
-import express from 'express';
-import dotenv from 'dotenv';
-import { ApolloServer, gql } from 'apollo-server-express';
-import {resolvers } from '../resolvers/resolver';
+import { resolvers } from '../resolvers/resolver';
+import axios from 'axios';
+import mockData from './mockData/chargingStationData.json';
+import mongoose, { ConnectOptions } from 'mongoose';
 import { ChargingStationService } from '../service/ChargingStationService';
-import { ChargingStationRepository } from '../infrastructure/repository/ChargingStationRepository';
+import { ApolloServer, gql } from 'apollo-server-express';
+import { createClient } from 'redis';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { typeDefs } from '../schema';
 
-dotenv.config();
+// Mock the axios.get function to simulate the OpenChargeMap API response
+jest.mock('axios');
+const mockRequest = mockData;
 
-const typeDefs = gql`
- type AddressInfo {
-   id: Int
-   title: String
-   addressLine1: String
-   town: String
-   stateOrProvince: String
-   postcode: String
-   countryId: Int
-   latitude: Float
-   longitude: Float
-   distanceUnit: Int
- }
+(axios.get as jest.MockedFunction<typeof axios.get>).mockResolvedValue({ data: mockRequest });
 
- type Connection {
-   id: Int
-   connectionTypeId: Int
-   statusTypeId: Int
-   levelId: Int
-   powerKW: Float
-   quantity: Int
- }
+let mongoServer: MongoMemoryServer;
+let redisClient: ReturnType<typeof createClient>;
+let repository: any;
 
- type ChargingStation {
-   isRecentlyVerified: Boolean
-   dateLastVerified: String
-   id: Int
-   uuid: String
-   dataProviderId: Int
-   operatorId: Int
-   usageTypeId: Int
-   addressInfo: AddressInfo
-   connections: [Connection]
-   numberOfPoints: Int
-   statusTypeId: Int
-   dateLastStatusUpdate: String
-   dataQualityLevel: Int
-   dateCreated: String
-   submissionStatusTypeId: Int
- }
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
 
- type response {
-  statusCode: Int
-  body: String
- }
- type Query {
-  chargingStations: [ChargingStation!]!
- }
- type Mutation {
-   importChargingStations: response!
- }
-`;
+  await mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  } as ConnectOptions);
 
-describe('GraphQL API', () => {
-    let app: any;
-    let chargingStationService: ChargingStationService;
-    let chargingStationRepository: ChargingStationRepository;
-    beforeAll(async () => {
-        chargingStationRepository = new ChargingStationRepository();
-        chargingStationService = new ChargingStationService(chargingStationRepository);
-        const server = new ApolloServer({
-          typeDefs,
-          resolvers,
-          context: () => ({ chargingStationService }),
-          formatError: (error) => {
-            return error;
-          },
-        });
-        await server.start();
-        app = express();
-        server.applyMiddleware({ app });
-      });
-  it('imports data from OpenChargeMap API to MongoDB', async () => {
-    const apiKey = process.env.OPENCHARGEMAP_API_KEY; // Replace with your actual API key
-    const response = await request(app)
-      .post('/graphql')
-      .send({
-        query: `
-          mutation {
-            importChargingStations()
+  redisClient = createClient();
+  await redisClient.connect();
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+  await redisClient.quit();
+});
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: () => ({
+    chargingStationService: new ChargingStationService(repository, mongoose.connection),
+  }),
+});
+
+describe('E2E Test for Importing Charging Stations', () => {
+  it('should import charging stations and store them in MongoDB', async () => {
+    const IMPORT_CHARGING_STATIONS = gql`
+      mutation {
+        importChargingStations {
+          body {
+            message
+            data
           }
-        `,
-      });
+          statusCode
+        }
+      }
+    `;
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.data).toBe('Import completed');
+    const response = await server.executeOperation({ query: IMPORT_CHARGING_STATIONS });
+
+    expect(response.data).toBeDefined();
+    expect(response.data?.importChargingStations.body.data).toBe('Import completed');
   });
 });

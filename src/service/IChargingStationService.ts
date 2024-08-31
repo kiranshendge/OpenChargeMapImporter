@@ -1,6 +1,9 @@
-import { ChargingStation } from "../models/ChargingStation";
+import { ChargingStation } from '../dto/ChargingStationDto';
 
 export interface IChargingStationService {
-    importData(chargingStations: any): Promise<void>;
-    getAllStations(): Promise<ChargingStation[]>;
+  fetchOpenChargeMapData(maxresults: number, retries?: number): Promise<ChargingStation[]>;
+  getCachedData(maxresults: number): Promise<ChargingStation[]>;
+  importDataToDB(chargingStations: ChargingStation[]): Promise<void>;
+  runWorker(limit: number): any;
+  importDataConcurrently(): Promise<void>;
 }

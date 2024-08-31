@@ -1,14 +1,14 @@
 import winston from 'winston';
-import 'winston-daily-rotate-file';
+import * as winstonDaily from 'winston-daily-rotate-file';
 
 const { combine, timestamp, printf, json } = winston.format;
 
 const errorFilter = winston.format((info, opts) => {
-    return info.level === 'error' ? info : false;
+  return info.level === 'error' ? info : false;
 });
-  
+
 const infoFilter = winston.format((info, opts) => {
-    return info.level === 'info' ? info : false;
+  return info.level === 'info' ? info : false;
 });
 
 const logger = winston.createLogger({
@@ -17,21 +17,21 @@ const logger = winston.createLogger({
     timestamp(),
     printf(({ timestamp, level, message }) => {
       return `${timestamp} [${level}]: ${message}`;
-    })
+    }),
   ),
   transports: [
     new winston.transports.Console(),
     new winston.transports.File({
-        filename: 'app-error.log',
-        level: 'error',
-        format: combine(errorFilter(), timestamp(), json()),
-      }),
+      filename: 'logs/app-error.log',
+      level: 'error',
+      format: combine(errorFilter(), timestamp(), json()),
+    }),
     new winston.transports.File({
-        filename: 'app-info.log',
-        level: 'info',
-        format: combine(infoFilter(), timestamp(), json()),
-    })
-  ]
+      filename: 'logs/app-info.log',
+      level: 'info',
+      format: combine(infoFilter(), timestamp(), json()),
+    }),
+  ],
 });
 
 export default logger;
