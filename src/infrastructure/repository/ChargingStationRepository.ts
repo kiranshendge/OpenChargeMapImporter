@@ -11,6 +11,8 @@ export class ChargingStationRepository implements IChargingStationRepository {
     this.dbConnection = dbConnection;
   }
   async bulkUpsert(data: any): Promise<void> {
+    const session = await this.dbConnection.startSession();
+    session.startTransaction();
     try {
       const bulkAddressOps = createBulkOps(data.addresses);
       await address.bulkWrite(bulkAddressOps);
@@ -18,9 +20,14 @@ export class ChargingStationRepository implements IChargingStationRepository {
       await connection.bulkWrite(bulkConnectionOps);
       const bulkChargingStnOps = createBulkOps(data.chargingStationsList);
       await chargingStations.bulkWrite(bulkChargingStnOps);
+      await session.commitTransaction();
     } catch (error: any) {
+      await session.abortTransaction();
       logger.error(`error during insert to mongodb: ${error.message}`);
       throw new Error(`error during insert to mongodb: ${error.message}`);
+    }
+    finally {
+      session.endSession()
     }
   }
 
