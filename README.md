@@ -55,6 +55,27 @@ The integration of POIs from OpenChargeMap is crucial for our platform as it enh
     * The Apollo GraphQL server provides a GraphQL interface for querying the POIs data.
     * Queries are handled by the Node.js server, which interacts with Redis and MongoDB to fetch the required data.
 
+## Installation and Usage ##
+* **Clone the repository**:<br/>
+  ` git clone https://github.com/kiranshendge/OpenChargeMapImporter.git `
+
+* **Install dependencies**:<br/>
+  `npm install`
+
+* **Set up environment variables**:<br/>
+Create a .env file in the root directory and add the necessary environment variables.
+
+* **Build the project**:
+  ` npm run build `
+
+* **Run the application**:
+  ` docker compose up `
+
+### Usage ###
+We have implemented two approaches to Import POIs data to database
+1. We have implemented scheduler which runs daily at 12 am.
+2. We have added mutation to import data. Please access the apollo GraphQL Playground at http://localhost:4000.
+
 ## API Documentation ##
 ### Endpoints ###
 1. **Import data**
